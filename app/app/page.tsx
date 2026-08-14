@@ -1,17 +1,10 @@
+"use client";
+
+// Miro panel — opened via miro.board.ui.openPanel({ url: '/app' })
+// All miro.* calls are client-only; this component is marked 'use client'.
+
 import * as React from "react";
-import { createRoot } from "react-dom/client";
-
-import "./assets/style.css";
-import { BoardInfo } from "@mirohq/websdk-types";
-
-// In development, requests are proxied through Vite (/salable-api → https://salable.app/api)
-// to avoid CORS issues. In production, point this at your own backend proxy.
-const SALABLE_API_BASE = import.meta.env.DEV ? "" : "https://salable.app";
-
-const salableApiPath = (path: string) =>
-  import.meta.env.DEV
-    ? `/salable-api${path}`
-    : `${SALABLE_API_BASE}/api${path}`;
+import type { BoardInfo } from "@mirohq/websdk-types";
 
 // Miro board action: creates a sticky note and zooms to it
 async function addSticky() {
@@ -21,27 +14,16 @@ async function addSticky() {
   await miro.board.viewport.zoomTo(stickyNote);
 }
 
-const App: React.FC = () => {
+export default function MiroPanel() {
   const [checkoutLink, setCheckoutLink] = React.useState<string | null>(null);
   const [canAddSticky, setCanAddSticky] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const publishableKey = import.meta.env.VITE_SALABLE_API_KEY as string;
-  const secretKey = import.meta.env.VITE_SALABLE_SECRET_KEY as string;
-  const planUuid = import.meta.env.VITE_SALABLE_PLAN_UUID as string;
-
   // Check if the given grantee (Miro team) has an active license.
-  // Returns false (unlicensed) if the grantee doesn't exist yet in Salable (404).
+  // Calls the Next.js API route which attaches the publishable key server-side.
   const checkUserLicense = async (granteeId: string): Promise<boolean> => {
     const response = await fetch(
-      `${salableApiPath("/entitlements/check")}?granteeId=${encodeURIComponent(granteeId)}`,
-      {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${publishableKey}`,
-        },
-      },
+      `/api/salable/entitlements/check?granteeId=${encodeURIComponent(granteeId)}`,
     );
 
     if (response.status === 404) {
@@ -68,24 +50,21 @@ const App: React.FC = () => {
     return entitlementNames.includes("pro");
   };
 
-  // Fetch a Salable checkout link for the given team
-  // NOTE: POST /api/checkout requires the secret key. Because this is a client-side-only
-  // app the secret key is exposed in the browser bundle. Move this call to a backend
-  // proxy (e.g. a serverless function) before shipping to production.
-  const fetchCheckoutLink = async (boardInfo: BoardInfo, granteeId: string) => {
+  // Fetch a Salable checkout link for the given team.
+  // The secret key never leaves the server — it is used inside the API route.
+  const fetchCheckoutLink = async (
+    boardInfo: BoardInfo,
+    granteeId: string,
+  ) => {
     if (checkoutLink) return;
 
     const boardUrl = `https://miro.com/app/board/${boardInfo.id}/`;
 
-    const response = await fetch(salableApiPath("/checkout"), {
+    const response = await fetch("/api/salable/checkout", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        Authorization: `Bearer ${secretKey}`,
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
         currency: "GBP",
-        planId: planUuid,
         owner: granteeId,
         grantee: granteeId,
         interval: "month",
@@ -103,37 +82,32 @@ const App: React.FC = () => {
     setCheckoutLink(json.data.url);
   };
 
-  // On mount: resolve the Miro team identity, then check license status
-  async function setup() {
-    try {
-      const response = await fetch("https://api.miro.com/v1/oauth-token", {
-        method: "GET",
-        headers: {
-          accept: "application/json",
-          authorization: `Bearer ${import.meta.env.VITE_MIRO_ACCESS_TOKEN as string}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Miro token resolution failed: ${response.status}`);
-      }
-
-      const jsonData = (await response.json()) as { team: { id: string } };
-      const teamId = jsonData.team.id;
-
-      const boardInfo = await miro.board.getInfo();
-      const isProMember = await checkUserLicense(teamId);
-
-      if (!isProMember) {
-        await fetchCheckoutLink(boardInfo, teamId);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
+  // On mount: resolve the Miro team identity, then check license status.
   React.useEffect(() => {
+    async function setup() {
+      try {
+        const response = await fetch("/api/miro/oauth-token");
+
+        if (!response.ok) {
+          throw new Error(`Miro token resolution failed: ${response.status}`);
+        }
+
+        const jsonData = (await response.json()) as { team: { id: string } };
+        const teamId = jsonData.team.id;
+
+        const boardInfo = await miro.board.getInfo();
+        const isProMember = await checkUserLicense(teamId);
+
+        if (!isProMember) {
+          await fetchCheckoutLink(boardInfo, teamId);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
     void setup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isLoading) {
@@ -175,8 +149,4 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-};
-
-const container = document.getElementById("root")!;
-const root = createRoot(container);
-root.render(<App />);
+}
