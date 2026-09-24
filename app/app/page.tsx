@@ -16,6 +16,7 @@ async function addSticky() {
 
 export default function MiroPanel() {
   const [checkoutLink, setCheckoutLink] = React.useState<string | null>(null);
+  const [isProMember, setIsProMember] = React.useState(false);
   const [canAddSticky, setCanAddSticky] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -45,9 +46,13 @@ export default function MiroPanel() {
       };
     };
 
+    // `create` enables the board action; `pro` marks an active Pro license.
     const entitlementNames = json.data.entitlements.map((e) => e.value);
     setCanAddSticky(entitlementNames.includes("create"));
-    return entitlementNames.includes("pro");
+
+    const isPro = entitlementNames.includes("pro");
+    setIsProMember(isPro);
+    return isPro;
   };
 
   // Fetch a Salable checkout link for the given team.
@@ -120,7 +125,7 @@ export default function MiroPanel() {
 
   return (
     <div>
-      {checkoutLink && !canAddSticky ? (
+      {checkoutLink && !isProMember ? (
         <>
           <p>In order to use this app, you need an active Pro license.</p>
           <a
@@ -135,7 +140,7 @@ export default function MiroPanel() {
         </>
       ) : null}
 
-      {canAddSticky ? <p>You are an active Pro license holder.</p> : null}
+      {isProMember ? <p>You are an active Pro license holder.</p> : null}
 
       <div>
         <button
