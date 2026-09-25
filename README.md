@@ -114,7 +114,7 @@ Follow the [Miro guide to create a Developer Team](https://developers.miro.com/d
 
 ### Register the app
 
-Inside your Developer Team, create a new app and set the **App URL** to `http://localhost:3000`. Copy the **Client ID** and **Client Secret** from the app settings, you'll need these to generate an access token.
+Inside your Developer Team, create a new app and set the **App URL** to `http://localhost:3000`. Copy the **Client ID** from the app settings, you'll need it in the next step.
 
 ### Set the Client ID
 
@@ -122,7 +122,9 @@ Add the Client ID you just copied to `.env` as `MIRO_CLIENT_ID`.
 
 ### Get a Miro access token
 
-The app resolves the Miro team identity at runtime by calling `GET https://api.miro.com/v1/oauth-token` with a Miro OAuth access token. Generate a token for your Developer Team using the [Miro OAuth flow](https://developers.miro.com/docs/getting-started-with-oauth) or the Miro REST API explorer, then set it as `MIRO_ACCESS_TOKEN`.
+The app resolves the Miro team identity at runtime by calling `GET https://api.miro.com/v1/oauth-token` with a Miro OAuth access token. You can generate one straight from your app's settings page, no OAuth flow required.
+
+Scroll to the **Permissions** section, tick `boards:read` and `boards:write`, then click **Install app and get OAuth token** and choose your Developer Team. Miro shows the token once, copy it and set it as `MIRO_ACCESS_TOKEN` in `.env`.
 
 > **Note** The Miro access token is used server-side only. It is kept in a server-only environment variable and never sent to the browser.
 
