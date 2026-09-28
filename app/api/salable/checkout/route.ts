@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Server-side proxy for POST https://salable.app/api/checkout
-// The secret key (SALABLE_SECRET_KEY) is a server-only env var — it has no
-// NEXT_PUBLIC_ prefix so it is never embedded in the browser bundle.
+// The secret key (SALABLE_SECRET_KEY) is a server-only env var,
+// it is never embedded in the browser bundle.
 export async function POST(request: NextRequest) {
   const secretKey = process.env.SALABLE_SECRET_KEY;
   if (!secretKey) {

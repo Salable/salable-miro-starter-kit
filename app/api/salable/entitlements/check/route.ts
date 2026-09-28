@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Server-side proxy for GET https://salable.app/api/entitlements/check
-// The publishable key is kept in a server-only env var (no NEXT_PUBLIC_ prefix)
-// so it is never embedded in the browser bundle.
+// The publishable key is kept in a server-only env var, it is never embedded in
+// the browser bundle.
 export async function GET(request: NextRequest) {
   const granteeId = request.nextUrl.searchParams.get("granteeId");
 

@@ -82,7 +82,7 @@ Inside your Product, enter a Plan name (_eg_ "Pro") and click **Create Plan**.
 
 | Entitlement name | Purpose                                                                 |
 | ---------------- | ----------------------------------------------------------------------- |
-| `pro`            | Indicates an active Pro license; hides the checkout prompt when present |
+| `pro`            | Indicates an active Pro subscription; hides the checkout prompt when present |
 | `create`         | Enables the "Add sticky!" button                                        |
 
 In the Entitlements field on your Plan, type each name and click **(+)** to add it. Entitlements aren't attached to the Plan until you save it.

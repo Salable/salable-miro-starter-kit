@@ -6,7 +6,6 @@
 import * as React from "react";
 import type { BoardInfo } from "@mirohq/websdk-types";
 
-// Miro board action: creates a sticky note and zooms to it
 async function addSticky() {
   const stickyNote = await miro.board.createStickyNote({
     content: "Hello, World!",
@@ -20,15 +19,15 @@ export default function MiroPanel() {
   const [canAddSticky, setCanAddSticky] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Check if the given grantee (Miro team) has an active license.
+  // Check if the given grantee (Miro team) has an active subscription.
   // Calls the Next.js API route which attaches the publishable key server-side.
-  const checkUserLicense = async (granteeId: string): Promise<boolean> => {
+  const checkUserEntitlements = async (granteeId: string): Promise<boolean> => {
     const response = await fetch(
       `/api/salable/entitlements/check?granteeId=${encodeURIComponent(granteeId)}`,
     );
 
     if (response.status === 404) {
-      // Grantee not yet registered in Salable — treat as no license
+      // Grantee not yet registered in Salable — treat as no subscription
       return false;
     }
 
@@ -46,7 +45,8 @@ export default function MiroPanel() {
       };
     };
 
-    // `create` enables the board action; `pro` marks an active Pro license.
+    // `create` enables the board action; `pro` marks an active Pro
+    // subscription.
     const entitlementNames = json.data.entitlements.map((e) => e.value);
     setCanAddSticky(entitlementNames.includes("create"));
 
@@ -56,11 +56,7 @@ export default function MiroPanel() {
   };
 
   // Fetch a Salable checkout link for the given team.
-  // The secret key never leaves the server — it is used inside the API route.
-  const fetchCheckoutLink = async (
-    boardInfo: BoardInfo,
-    granteeId: string,
-  ) => {
+  const fetchCheckoutLink = async (boardInfo: BoardInfo, granteeId: string) => {
     if (checkoutLink) return;
 
     const boardUrl = `https://miro.com/app/board/${boardInfo.id}/`;
@@ -87,7 +83,7 @@ export default function MiroPanel() {
     setCheckoutLink(json.data.url);
   };
 
-  // On mount: resolve the Miro team identity, then check license status.
+  // On mount: resolve the Miro team identity, then check subscription status.
   React.useEffect(() => {
     async function setup() {
       try {
@@ -101,7 +97,7 @@ export default function MiroPanel() {
         const teamId = jsonData.team.id;
 
         const boardInfo = await miro.board.getInfo();
-        const isProMember = await checkUserLicense(teamId);
+        const isProMember = await checkUserEntitlements(teamId);
 
         if (!isProMember) {
           await fetchCheckoutLink(boardInfo, teamId);
@@ -118,7 +114,7 @@ export default function MiroPanel() {
   if (isLoading) {
     return (
       <div className="loading-container">
-        <p className="p-small">Checking your license&hellip;</p>
+        <p className="p-small">Checking your subscriptions&hellip;</p>
       </div>
     );
   }
@@ -127,7 +123,9 @@ export default function MiroPanel() {
     <div>
       {checkoutLink && !isProMember ? (
         <>
-          <p>In order to use this app, you need an active Pro license.</p>
+          <p>
+            In order to use this app, you need an active Pro plan subscription.
+          </p>
           <a
             href={checkoutLink}
             target="_blank"
@@ -140,7 +138,9 @@ export default function MiroPanel() {
         </>
       ) : null}
 
-      {isProMember ? <p>You are an active Pro license holder.</p> : null}
+      {isProMember ? (
+        <p>You are an active Pro plan subscription holder.</p>
+      ) : null}
 
       <div>
         <button
