@@ -60,17 +60,15 @@ The app runs on `http://localhost:3000`.
 
 **5. Open the panel in Miro**
 
-Open a Miro board in your Developer Team and click the app icon in the left toolbar to launch the panel.
+Open a Miro board in your Developer Team. Select the Plus icon in the bottom-left corner, find and select your app in the list.
 
-If you can't see the app in the toolbar, ensure that the app has been installed correctly on your team.
+If you can't see your app in the list, ensure that the app has been installed correctly on your team.
 
 ## Salable setup
 
 ### Create a Product
 
 Open the [Products page](https://salable.app/dashboard/products) on the Salable dashboard. Enter a name for your Product (_eg_ "My Miro App") and click **Create Product**.
-
-Click the edit icon on your new Product to open its configuration. Under **Settings**, add a **Success URL** (where customers land after purchase, _eg_ the URL of the Miro board) and a **Cancel URL** (where they return if they abandon checkout).
 
 ### Create a Plan
 
@@ -80,10 +78,10 @@ Inside your Product, enter a Plan name (_eg_ "Pro") and click **Create Plan**.
 
 **[Entitlements](https://salable.app/docs/understanding-entitlements)** are the features you want to gate until a user subscribes. The starter kit checks for two entitlement values by name, so they must be defined on your Plan with exactly these names:
 
-| Entitlement name | Purpose                                                                 |
-| ---------------- | ----------------------------------------------------------------------- |
+| Entitlement name | Purpose                                                                      |
+| ---------------- | ---------------------------------------------------------------------------- |
 | `pro`            | Indicates an active Pro subscription; hides the checkout prompt when present |
-| `create`         | Enables the "Add sticky!" button                                        |
+| `create`         | Enables the "Add sticky!" button                                             |
 
 In the Entitlements field on your Plan, type each name and click **(+)** to add it. Entitlements aren't attached to the Plan until you save it.
 
@@ -101,7 +99,7 @@ Go back to the Plans tab and copy the **Plan ID**, this goes into the `SALABLE_P
 
 ### Get your API keys
 
-Open the **API Keys** page of the Salable dashboard. You'll find two keys:
+Open the [API Keys page](https://salable.app/dashboard/api-keys) of the Salable dashboard. You'll find two keys:
 
 - **Publishable key**: safe for use in client requests. Goes into `SALABLE_PUBLISHABLE_KEY` in `.env`.
 - **Secret key**: required for checkout and all write operations. Goes into `.env` under `SALABLE_SECRET_KEY`. Never expose this in client-side code.
@@ -136,11 +134,11 @@ Entitlement checks are scoped **per Miro team**, not per individual user. On mou
 
 ### Entitlement check
 
-The panel calls `/api/salable/entitlements/check?granteeId=<teamId>`, which makes a request to Salable's [entitlement check](https://salable.app/docs/openapi/scalar#tag/entitlements/GET/api/entitlements/check) endpoint using the publishable key. If the team holds the `pro` entitlement, the checkout prompt is hidden; if it holds `create`, the "Add sticky!" button is enabled.
+The panel calls `/api/salable/entitlements/check?granteeId=<teamId>`, which makes a request to Salable's [entitlement check](https://salable.app/docs/check-entitlements) endpoint ([API reference](https://salable.app/docs/openapi/scalar#tag/entitlements/GET/api/entitlements/check)) using the publishable key. If the team holds the `pro` entitlement, the checkout prompt is hidden; if it holds `create`, the "Add sticky!" button is enabled.
 
 ### Checkout
 
-If the team has no valid subscriptions, the panel calls `/api/salable/checkout` to generate a Stripe-hosted checkout URL. That request calls Salable's [generate checkout](https://salable.app/docs/openapi/scalar#tag/checkout/POST/api/checkout) endpoint through a Next.js API route, so the secret key never leaves the server. The checkout link opens in a new tab because Miro apps run inside an iframe and cannot redirect the current frame.
+If the team has no valid subscriptions, the panel calls `/api/salable/checkout` to generate a Stripe-hosted checkout URL. That request calls Salable's [Quick Checkout](https://salable.app/docs/quick-checkout) endpoint ([API reference](https://salable.app/docs/openapi/scalar#tag/checkout/POST/api/checkout)) through a Next.js API route, so the secret key never leaves the server. The checkout link opens in a new tab because Miro apps run inside an iframe and cannot redirect the current frame.
 
 After a successful payment, Salable creates the Subscription and activates the Entitlements automatically. The next time the panel loads, the entitlement check will return the new entitlements and the feature will be unlocked.
 
