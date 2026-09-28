@@ -70,7 +70,7 @@ If you can't see your app in the list, ensure that the app has been installed co
 
 ### Import the example Product (optional)
 
-If you just want to see a working Miro app with Salable, you can skip the manual setup below. This repository includes [`salable-product.yaml`](./salable-product.yaml), a ready-made Product with both required Entitlements and a flat-rate monthly Plan already configured.
+If you just want to see a working Miro app with Salable, you can skip the manual setup below. This repository includes [`salable-product.yaml`](https://github.com/Salable/salable-miro-starter-kit/blob/main/salable-product.yaml), a ready-made Product with both required Entitlements and a flat-rate monthly Plan already configured.
 
 Open the [Products page](https://salable.app/dashboard/products) on the Salable dashboard, click **Upload Yaml** in the top right, and select `salable-product.yaml`. Once the import finishes, open the new "Miro Starter Kit" Product, go to the Plans tab, and copy the **Plan ID** for the Pro Plan into `SALABLE_PLAN_ID` in `.env`. Then continue at [Get your API keys](#get-your-api-keys).
 
