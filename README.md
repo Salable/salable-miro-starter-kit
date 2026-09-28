@@ -64,6 +64,8 @@ Open a Miro board in your Developer Team. Select the Plus icon in the bottom-lef
 
 If you can't see your app in the list, ensure that the app has been installed correctly on your team.
 
+> **Warning** Browsers require the **Apps on device** permission to reach a server running on your machine. If Miro can't load your local app, open the site permissions for `miro.com` in your browser and allow **Apps on device**.
+
 ## Salable setup
 
 ### Create a Product
