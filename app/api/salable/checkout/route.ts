@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Server-side proxy for POST https://salable.app/api/checkout
-// The secret key (SALABLE_SECRET_KEY) is a server-only env var — it has no
-// NEXT_PUBLIC_ prefix so it is never embedded in the browser bundle.
+// The secret key (SALABLE_SECRET_KEY) is a server-only env var,
+// it is never embedded in the browser bundle.
 export async function POST(request: NextRequest) {
   const secretKey = process.env.SALABLE_SECRET_KEY;
   if (!secretKey) {
@@ -12,10 +12,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const planUuid = process.env.SALABLE_PLAN_UUID;
-  if (!planUuid) {
+  const planId = process.env.SALABLE_PLAN_ID;
+  if (!planId) {
     return NextResponse.json(
-      { error: "SALABLE_PLAN_UUID is not configured" },
+      { error: "SALABLE_PLAN_ID is not configured" },
       { status: 500 },
     );
   }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       "content-type": "application/json",
       authorization: `Bearer ${secretKey}`,
     },
-    body: JSON.stringify({ ...body, planId: planUuid }),
+    body: JSON.stringify({ ...body, planId }),
   });
 
   const responseBody = await upstream.text();

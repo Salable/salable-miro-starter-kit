@@ -1,7 +1,10 @@
 {
-  "name": "salable-miro-starter",
+  "name": "salable-miro-starter-kit",
   "version": "0.1.0",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",

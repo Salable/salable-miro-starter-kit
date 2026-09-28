@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Server-side proxy for GET https://salable.app/api/entitlements/check
-// The publishable key is kept in a server-only env var (no NEXT_PUBLIC_ prefix)
-// so it is never embedded in the browser bundle.
+// The publishable key is kept in a server-only env var, it is never embedded in
+// the browser bundle.
 export async function GET(request: NextRequest) {
   const granteeId = request.nextUrl.searchParams.get("granteeId");
 
@@ -13,10 +13,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const apiKey = process.env.SALABLE_API_KEY;
-  if (!apiKey) {
+  const publishableKey = process.env.SALABLE_PUBLISHABLE_KEY;
+  if (!publishableKey) {
     return NextResponse.json(
-      { error: "SALABLE_API_KEY is not configured" },
+      { error: "SALABLE_PUBLISHABLE_KEY is not configured" },
       { status: 500 },
     );
   }
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       method: "GET",
       headers: {
         accept: "application/json",
-        authorization: `Bearer ${apiKey}`,
+        authorization: `Bearer ${publishableKey}`,
       },
     },
   );
