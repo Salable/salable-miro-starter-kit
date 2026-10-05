@@ -36,6 +36,11 @@ export async function GET(request: NextRequest) {
 
   return new NextResponse(body, {
     status: upstream.status,
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      // Entitlements change the moment a Subscription is purchased or
+      // cancelled, so this response must never be replayed from a cache.
+      "cache-control": "no-store",
+    },
   });
 }

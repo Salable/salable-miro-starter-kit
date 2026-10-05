@@ -101,7 +101,9 @@ In the Entitlements field on your Plan, type each name and click **(+)** to add 
 
 Click **Add Line Item** and enter a **Line Item Name**, a customer-facing label (_eg_ "Monthly Subscription"). The default Interval Type and Price Type are already what a simple paywall needs.
 
-Then add a Price: set the Currency, enter a Unit Amount, leave Interval as **Month** and Interval Count as **1**. Click **Save Plan**.
+Then add a Price: set the Currency to **USD**, enter a Unit Amount, leave Interval as **Month** and Interval Count as **1**. Click **Save Plan**.
+
+> **Note** The starter kit requests a USD checkout, so the Price on your Plan must be in USD too. To use a different currency, change `currency` in `app/app/page.tsx` to match.
 
 ### Copy the Plan ID
 
@@ -154,12 +156,15 @@ After a successful payment, Salable creates the Subscription and activates the E
 
 In Test Mode, checkout links run against Stripe's test environment, so no real money moves. Complete a test purchase with Stripe's test card `4242 4242 4242 4242`, any future expiry date, and any three-digit CVC.
 
+> **Note** Once a team holds the `pro` Entitlement the panel stops showing the checkout prompt, so the Subscription has to end before you can run the purchase flow again. The panel's **Cancel subscription** button does this for you, calling `/api/salable/cancel`. You can also cancel from the [Subscriptions page](https://salable.app/dashboard/subscriptions) on the dashboard, or through the API as described in [Cancel a subscription](https://salable.app/docs/cancel-subscription). Cancelling immediately revokes the Entitlements, so the panel shows the checkout prompt again.
+
 ### API route overview
 
 | Route                             | Method | Purpose                                                          |
 | --------------------------------- | ------ | ---------------------------------------------------------------- |
 | `/api/salable/entitlements/check` | `GET`  | Proxies entitlement check to Salable using the publishable key   |
 | `/api/salable/checkout`           | `POST` | Proxies checkout link generation to Salable using the secret key |
+| `/api/salable/cancel`             | `POST` | Cancels the team's active Subscription using the secret key      |
 | `/api/miro/oauth-token`           | `GET`  | Proxies OAuth token lookup to Miro to resolve the team ID        |
 
 ## Moving to production
@@ -187,4 +192,5 @@ When you're ready to accept real payments:
 - [Understanding Entitlements](https://salable.app/docs/understanding-entitlements)
 - [Per-Seat Billing](https://salable.app/docs/per-seat-quick-start)
 - [Usage-Based Billing](https://salable.app/docs/usage-quick-start)
+- [Cancel a Subscription](https://salable.app/docs/cancel-subscription)
 - [Miro Developer documentation](https://developers.miro.com/docs)

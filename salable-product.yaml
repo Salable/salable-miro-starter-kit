@@ -38,11 +38,11 @@ plans:
         meterSlug: null
         unitLabel: null
         prices:
-          - defaultCurrency: GBP
+          - defaultCurrency: USD
             interval: month
             intervalCount: 1
             currencyOptions:
-              - currency: GBP
+              - currency: USD
                 unitAmount: 499
                 tiers: []
             archivedAt: null
