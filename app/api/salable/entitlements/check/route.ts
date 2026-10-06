@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Salable } from "@salable/sdk";
 
-// Server-side proxy for GET https://salable.app/api/entitlements/check
-// The publishable key is kept in a server-only env var, it is never embedded in
-// the browser bundle.
+// Server-side entitlement check, via the Salable Node SDK.
 export async function GET(request: NextRequest) {
   const granteeId = request.nextUrl.searchParams.get("granteeId");
 
@@ -13,34 +12,42 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const publishableKey = process.env.SALABLE_PUBLISHABLE_KEY;
-  if (!publishableKey) {
+  const secretKey = process.env.SALABLE_SECRET_KEY;
+  if (!secretKey) {
     return NextResponse.json(
-      { error: "SALABLE_PUBLISHABLE_KEY is not configured" },
+      { error: "SALABLE_SECRET_KEY is not configured" },
       { status: 500 },
     );
   }
 
-  const upstream = await fetch(
-    `https://salable.app/api/entitlements/check?granteeId=${encodeURIComponent(granteeId)}`,
-    {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${publishableKey}`,
-      },
-    },
-  );
+  const salable = new Salable(secretKey);
 
-  const body = await upstream.text();
+  // Entitlements change the moment a Subscription is purchased or cancelled,
+  // so this response must never be replayed from a cache.
+  const headers = { "cache-control": "no-store" };
 
-  return new NextResponse(body, {
-    status: upstream.status,
-    headers: {
-      "content-type": "application/json",
-      // Entitlements change the moment a Subscription is purchased or
-      // cancelled, so this response must never be replayed from a cache.
-      "cache-control": "no-store",
-    },
-  });
+  try {
+    const result = await salable.api.entitlements.check.get({
+      queryParameters: { granteeId },
+    });
+
+    return NextResponse.json(
+      { data: { entitlements: result?.data?.entitlements ?? [] } },
+      { headers },
+    );
+  } catch (error) {
+    const status = (error as { responseStatusCode?: number })
+      .responseStatusCode;
+
+    // A 404 means the grantee isn't registered in Salable yet, which is just
+    // another way of saying they hold no Entitlements.
+    if (status === 404) {
+      return NextResponse.json({ data: { entitlements: [] } }, { headers });
+    }
+
+    return NextResponse.json(
+      { error: "Entitlement check failed" },
+      { status: status ?? 500 },
+    );
+  }
 }
