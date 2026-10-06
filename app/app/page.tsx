@@ -6,7 +6,6 @@
 import * as React from "react";
 import type { BoardInfo } from "@mirohq/websdk-types";
 
-// Miro board action: creates a sticky note and zooms to it
 async function addSticky() {
   const stickyNote = await miro.board.createStickyNote({
     content: "Hello, World!",
@@ -14,57 +13,58 @@ async function addSticky() {
   await miro.board.viewport.zoomTo(stickyNote);
 }
 
+// Fetch the Entitlement names held by the given grantee (Miro team).
+// Calls the Next.js API route which attaches the secret key server-side.
+// `no-store` keeps the browser from replaying a stale check after a
+// cancellation.
+async function fetchEntitlementNames(granteeId: string): Promise<string[]> {
+  const response = await fetch(
+    `/api/salable/entitlements/check?granteeId=${encodeURIComponent(granteeId)}`,
+    { cache: "no-store" },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Entitlement check failed: ${response.status}`);
+  }
+
+  const json = (await response.json()) as {
+    data: {
+      entitlements: Array<{
+        type: string;
+        value: string;
+        expiryDate: string | null;
+      }>;
+    };
+  };
+
+  return json.data.entitlements.map((e) => e.value);
+}
+
 export default function MiroPanel() {
   const [checkoutLink, setCheckoutLink] = React.useState<string | null>(null);
+  const [isProMember, setIsProMember] = React.useState(false);
   const [canAddSticky, setCanAddSticky] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isCancelling, setIsCancelling] = React.useState(false);
+  const [message, setMessage] = React.useState<string | null>(null);
+  const [teamId, setTeamId] = React.useState<string | null>(null);
+  const [boardInfo, setBoardInfo] = React.useState<BoardInfo | null>(null);
 
-  // Check if the given grantee (Miro team) has an active license.
-  // Calls the Next.js API route which attaches the publishable key server-side.
-  const checkUserLicense = async (granteeId: string): Promise<boolean> => {
-    const response = await fetch(
-      `/api/salable/entitlements/check?granteeId=${encodeURIComponent(granteeId)}`,
-    );
-
-    if (response.status === 404) {
-      // Grantee not yet registered in Salable — treat as no license
-      return false;
-    }
-
-    if (!response.ok) {
-      throw new Error(`Entitlement check failed: ${response.status}`);
-    }
-
-    const json = (await response.json()) as {
-      data: {
-        entitlements: Array<{
-          type: string;
-          value: string;
-          expiryDate: string | null;
-        }>;
-      };
-    };
-
-    const entitlementNames = json.data.entitlements.map((e) => e.value);
+  // `create` enables the board action; `pro` marks an active Pro subscription.
+  const applyEntitlements = (entitlementNames: string[]) => {
     setCanAddSticky(entitlementNames.includes("create"));
-    return entitlementNames.includes("pro");
+    setIsProMember(entitlementNames.includes("pro"));
   };
 
   // Fetch a Salable checkout link for the given team.
-  // The secret key never leaves the server — it is used inside the API route.
-  const fetchCheckoutLink = async (
-    boardInfo: BoardInfo,
-    granteeId: string,
-  ) => {
-    if (checkoutLink) return;
-
+  const fetchCheckoutLink = async (boardInfo: BoardInfo, granteeId: string) => {
     const boardUrl = `https://miro.com/app/board/${boardInfo.id}/`;
 
     const response = await fetch("/api/salable/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        currency: "GBP",
+        currency: "USD",
         owner: granteeId,
         grantee: granteeId,
         interval: "month",
@@ -82,7 +82,39 @@ export default function MiroPanel() {
     setCheckoutLink(json.data.url);
   };
 
-  // On mount: resolve the Miro team identity, then check license status.
+  // Cancel the team's active subscription, then refresh the panel so the
+  // purchase flow can be run again. Included so the demo covers the full
+  // lifecycle; a production app would gate this behind its own confirmation.
+  const cancelSubscription = async () => {
+    if (!teamId || !boardInfo) return;
+
+    setIsCancelling(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/salable/cancel", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ owner: teamId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Cancellation failed: ${response.status}`);
+      }
+
+      // The Subscription is cancelled and the Entitlements revoked with it, so
+      // drop back to the unsubscribed view and fetch a fresh checkout link.
+      applyEntitlements([]);
+      await fetchCheckoutLink(boardInfo, teamId);
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Cancellation failed",
+      );
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  // On mount: resolve the Miro team identity, then check subscription status.
   React.useEffect(() => {
     async function setup() {
       try {
@@ -94,11 +126,15 @@ export default function MiroPanel() {
 
         const jsonData = (await response.json()) as { team: { id: string } };
         const teamId = jsonData.team.id;
+        setTeamId(teamId);
 
         const boardInfo = await miro.board.getInfo();
-        const isProMember = await checkUserLicense(teamId);
+        setBoardInfo(boardInfo);
 
-        if (!isProMember) {
+        const entitlementNames = await fetchEntitlementNames(teamId);
+        applyEntitlements(entitlementNames);
+
+        if (!entitlementNames.includes("pro")) {
           await fetchCheckoutLink(boardInfo, teamId);
         }
       } finally {
@@ -113,16 +149,24 @@ export default function MiroPanel() {
   if (isLoading) {
     return (
       <div className="loading-container">
-        <p className="p-small">Checking your license&hellip;</p>
+        <p className="p-small">Checking your subscriptions&hellip;</p>
       </div>
     );
   }
 
   return (
     <div>
-      {checkoutLink && !canAddSticky ? (
+      {message ? (
+        <p className="p-small" role="alert">
+          {message}
+        </p>
+      ) : null}
+
+      {checkoutLink && !isProMember ? (
         <>
-          <p>In order to use this app, you need an active Pro license.</p>
+          <p>
+            In order to use this app, you need an active Pro plan subscription.
+          </p>
           <a
             href={checkoutLink}
             target="_blank"
@@ -135,7 +179,19 @@ export default function MiroPanel() {
         </>
       ) : null}
 
-      {canAddSticky ? <p>You are an active Pro license holder.</p> : null}
+      {isProMember ? (
+        <>
+          <p>You are an active Pro plan subscription holder.</p>
+          <button
+            onClick={() => void cancelSubscription()}
+            className="button button-secondary"
+            disabled={isCancelling}
+          >
+            {isCancelling ? "Cancelling…" : "Cancel subscription"}
+          </button>
+          <hr />
+        </>
+      ) : null}
 
       <div>
         <button
