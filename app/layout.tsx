@@ -3,7 +3,7 @@ import Script from "next/script";
 import "../src/assets/style.css";
 
 export const metadata: Metadata = {
-  title: "Salable Miro Starter",
+  title: "Salable Miro Starter Kit",
 };
 
 export default function RootLayout({

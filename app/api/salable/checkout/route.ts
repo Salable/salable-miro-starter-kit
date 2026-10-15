@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Salable } from "@salable/sdk";
 
-// Server-side proxy for POST https://salable.app/api/checkout
-// The secret key (SALABLE_SECRET_KEY) is a server-only env var — it has no
-// NEXT_PUBLIC_ prefix so it is never embedded in the browser bundle.
+type CheckoutBody = Parameters<Salable["api"]["checkout"]["post"]>[0];
+
+// Generates a Quick Checkout link, via the Salable Node SDK. The secret key
+// (SALABLE_SECRET_KEY) is a server-only env var, it is never embedded in the
+// browser bundle.
 export async function POST(request: NextRequest) {
   const secretKey = process.env.SALABLE_SECRET_KEY;
   if (!secretKey) {
@@ -12,37 +15,37 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const planUuid = process.env.SALABLE_PLAN_UUID;
-  if (!planUuid) {
+  const planId = process.env.SALABLE_PLAN_ID;
+  if (!planId) {
     return NextResponse.json(
-      { error: "SALABLE_PLAN_UUID is not configured" },
+      { error: "SALABLE_PLAN_ID is not configured" },
       { status: 500 },
     );
   }
 
-  const body = (await request.json()) as {
-    currency: string;
-    owner: string;
-    grantee: string;
-    interval: string;
-    intervalCount: number;
-    successUrl: string;
-    cancelUrl: string;
-  };
+  const body = (await request.json()) as Omit<CheckoutBody, "planId">;
 
-  const upstream = await fetch("https://salable.app/api/checkout", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${secretKey}`,
-    },
-    body: JSON.stringify({ ...body, planId: planUuid }),
-  });
+  const salable = new Salable(secretKey);
 
-  const responseBody = await upstream.text();
+  try {
+    const checkout = await salable.api.checkout.post({ ...body, planId });
 
-  return new NextResponse(responseBody, {
-    status: upstream.status,
-    headers: { "content-type": "application/json" },
-  });
+    const url = checkout?.data?.url;
+    if (!url) {
+      return NextResponse.json(
+        { error: "Salable did not return a checkout URL" },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({ data: { url } });
+  } catch (error) {
+    const status =
+      (error as { responseStatusCode?: number }).responseStatusCode ?? 500;
+
+    return NextResponse.json(
+      { error: "Checkout link generation failed" },
+      { status },
+    );
+  }
 }

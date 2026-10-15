@@ -1,0 +1,50 @@
+product:
+  name: Miro Starter Kit
+  archivedAt: null
+  isActive: true
+  settings:
+    cancelUrl: null
+    successUrl: null
+    allowPromoCodes: false
+    automaticTax: false
+    collectBillingAddress: false
+    collectShippingAddress: false
+    cardPrefillPreference: none
+    pastDueEntitlements: true
+entitlements:
+  - name: pro
+  - name: create
+plans:
+  - name: Pro
+    isActive: true
+    isPerpetual: false
+    trialPeriodDays: null
+    entitlements:
+      - pro
+      - create
+    lineItems:
+      - name: Flat-Rate Monthly
+        slug: flatrate_monthly_andtn
+        nickname: ''
+        priceType: flat_rate
+        intervalType: recurring
+        billingScheme: per_unit
+        isActive: true
+        isUnlimited: false
+        maxQuantity: 1
+        allowChangingQuantity: false
+        tiersMode: null
+        minQuantity: 1
+        meterSlug: null
+        unitLabel: null
+        prices:
+          - defaultCurrency: USD
+            interval: month
+            intervalCount: 1
+            currencyOptions:
+              - currency: USD
+                unitAmount: 499
+                tiers: []
+            archivedAt: null
+        archivedAt: null
+    archivedAt: null
