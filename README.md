@@ -2,7 +2,7 @@
 
 A Next.js template for building monetized [Miro](https://miro.com) apps using [Salable](https://salable.app) for pricing, subscriptions, and feature gating.
 
-In this template is a Miro panel app with a single paid feature: a button that adds a sticky note to the board. It covers the full lifecycle a monetized app needs — identifying the customer, checking what they are entitled to, selling them a Plan, and handling cancellation.
+In this template is a Miro panel app with a single paid feature: a button that adds a sticky note to the board. It covers the full lifecycle a monetized app needs: identifying the customer, checking what they are entitled to, selling them a Plan, and handling cancellation.
 
 When a user opens the panel, the app resolves the current Miro team identity and checks whether that team holds a valid Salable subscription. Teams with a valid subscription can use the gated feature; teams without one are shown a checkout link to purchase a plan.
 
@@ -175,7 +175,7 @@ After a successful payment, Salable creates the Subscription and grants the Enti
 
 In Test Mode, checkout links run against Stripe's test environment, so no real money moves. Complete a test purchase with Stripe's test card `4242 4242 4242 4242`, any future expiry date, and any three-digit CVC.
 
-> **Note** Once a team holds the `pro` Entitlement the panel stops showing the checkout prompt, so the Subscription has to end before you can run the purchase flow again. The panel's **Cancel subscription** button does this for you, calling `/api/salable/cancel`. You can also cancel from the [Subscriptions page](https://salable.app/dashboard/subscriptions) on the dashboard, or by calling [`POST /api/subscriptions/{id}/cancel`](https://salable.app/docs/openapi/scalar#tag/subscriptions/POST/api/subscriptions/{id}/cancel) directly. Cancelling immediately revokes the Entitlements, so the panel shows the checkout prompt again.
+> **Note** Once a team holds the `pro` Entitlement the panel stops showing the checkout prompt, so the Subscription has to end before you can run the purchase flow again. The panel's **Cancel subscription** button does this for you, calling `/api/salable/cancel`. You can also cancel from the [Subscriptions page](https://salable.app/dashboard/subscriptions) on the dashboard, or through the API as described in [Cancel a subscription](https://salable.app/docs/cancel-subscription). Cancelling immediately revokes the Entitlements, so the panel shows the checkout prompt again.
 
 ### API route overview
 
@@ -215,5 +215,6 @@ When you're ready to accept real payments:
 - [Understanding Entitlements](https://salable.app/docs/understanding-entitlements)
 - [Per-Seat Billing](https://salable.app/docs/per-seat-quick-start)
 - [Usage-Based Billing](https://salable.app/docs/usage-quick-start)
+- [Hybrid Pricing](https://salable.app/docs/hybrid-pricing-quick-start)
 - [Cancel a Subscription](https://salable.app/docs/cancel-subscription)
 - [Miro Developer documentation](https://developers.miro.com/docs)
